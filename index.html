@@ -1,1 +1,335 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Lawgivers - Political Sim</title>
+    <style>
+        :root {
+            --bg-color: #1a1a24;
+            --card-bg: #242432;
+            --text-color: #e0e0e6;
+            --accent-color: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--card-bg);
+            padding-bottom: 20px;
+        }
+
+        h1 { margin: 0; color: #fff; }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background-color: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .stat-card h3 { margin: 0 0 10px 0; font-size: 0.9rem; color: #888; text-transform: uppercase; }
+        .stat-card p { margin: 0; font-size: 1.8rem; font-weight: bold; color: var(--accent-color); }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .main-layout { grid-template-columns: 1fr; }
+        }
+
+        .panel {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        h2 { margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px; font-size: 1.3rem; }
+
+        .bill-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .bill-card {
+            background: #2d2d3f;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .bill-card h4 { margin: 0 0 5px 0; }
+        .bill-card p { margin: 0 0 12px 0; font-size: 0.85rem; color: #aaa; }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        button:hover { background-color: #4338ca; }
+        button:disabled { background-color: #444; cursor: not-allowed; }
+
+        .btn-bribe { background-color: #b45309; margin-right: 5px;}
+        .btn-bribe:hover { background-color: #92400e; }
+
+        .log-box {
+            background-color: #11111a;
+            padding: 10px;
+            border-radius: 6px;
+            height: 250px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .log-entry { margin-bottom: 8px; border-bottom: 1px solid #222; padding-bottom: 4px; }
+        .text-success { color: var(--success); }
+        .text-danger { color: var(--danger); }
+        .text-warn { color: #f59e0b; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Lawgivers: Mini-HTML Edition</h1>
+        <p>Control the parliament, lobby your opposition, pass laws, win elections.</p>
+    </header>
+
+    <div class="dashboard">
+        <div class="stat-card">
+            <h3>Turn / Term</h3>
+            <p id="stat-turn">1 / 4</p>
+        </div>
+        <div class="stat-card">
+            <h3>Your Seats (Out of 100)</h3>
+            <p id="stat-seats">35</p>
+        </div>
+        <div class="stat-card">
+            <h3>Public Approval</h3>
+            <p id="stat-approval">50%</p>
+        </div>
+        <div class="stat-card">
+            <h3>Party Funds</h3>
+            <p id="stat-funds">$10,000</p>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div>
+            <div class="panel">
+                <h2>Propose & Vote on Bills</h2>
+                <div class="bill-grid">
+                    <div class="bill-card">
+                        <h4>Free Universal Healthcare</h4>
+                        <p>Cost: High | Impact: Greatly increases Public Approval, decreases Party Funds next turn.</p>
+                        <button onclick="lobbyBill('healthcare')" class="btn-bribe" id="btn-lobby-healthcare">Lobby Opposition (-$3,000)</button>
+                        <button onclick="voteBill('healthcare')">Vote on Bill</button>
+                    </div>
+                    <div class="bill-card">
+                        <h4>Corporate Tax Cuts</h4>
+                        <p>Cost: None | Impact: Boosts Party Funds significantly, lowers Public Approval.</p>
+                        <button onclick="lobbyBill('tax')" class="btn-bribe" id="btn-lobby-tax">Lobby Opposition (-$2,000)</button>
+                        <button onclick="voteBill('tax')">Vote on Bill</button>
+                    </div>
+                    <div class="bill-card">
+                        <h4>Internet Censorship Bill</h4>
+                        <p>Cost: Medium | Impact: Secures authoritarian alignment, heavily drops public approval, stabilizes party control.</p>
+                        <button onclick="lobbyBill('censorship')" class="btn-bribe" id="btn-lobby-censorship">Lobby Opposition (-$4,000)</button>
+                        <button onclick="voteBill('censorship')">Vote on Bill</button>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="nextTurn()" style="width: 100%; padding: 15px; font-size: 1.1rem; background-color: var(--success);">
+                End Turn / Session
+            </button>
+        </div>
+
+        <div>
+            <div class="panel">
+                <h2>Political Intelligence & Logs</h2>
+                <div class="log-box" id="log-container">
+                    <div class="log-entry text-warn">Welcome Leader. Next general election is in 4 turns. Secure more seats!</div>
+                </div>
+            </div>
+            
+            <div class="panel" style="font-size: 0.9rem;">
+                <h2>Parliament Status</h2>
+                <p>To pass a bill, you need <strong>51 votes</strong>.</p>
+                <p>Your guaranteed votes: <span id="ui-my-votes" class="text-success" style="font-weight:bold;">35</span></p>
+                <p>Lobbied/Bribed bought votes: <span id="ui-bribed-votes" class="text-warn" style="font-weight:bold;">0</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Game State
+    let state = {
+        turn: 1,
+        maxTurnsInTerm: 4,
+        seats: 35,
+        approval: 50,
+        funds: 10000,
+        bribedVotes: {
+            healthcare: 0,
+            tax: 0,
+            censorship: 0
+        }
+    };
+
+    function log(message, type = '') {
+        const logBox = document.getElementById('log-container');
+        const entry = document.createElement('div');
+        entry.className = `log-entry ${type}`;
+        entry.innerText = `[Turn ${state.turn}] ${message}`;
+        logBox.appendChild(entry);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function updateUI() {
+        document.getElementById('stat-turn').innerText = `${state.turn} / ${state.maxTurnsInTerm}`;
+        document.getElementById('stat-seats').innerText = state.seats;
+        document.getElementById('stat-approval').innerText = `${state.approval}%`;
+        document.getElementById('stat-funds').innerText = `$${state.funds.toLocaleString()}`;
+        document.getElementById('ui-my-votes').innerText = state.seats;
+        
+        // Update lobby buttons disabled states if funds too low
+        document.getElementById('btn-lobby-healthcare').disabled = state.funds < 3000;
+        document.getElementById('btn-lobby-tax').disabled = state.funds < 2000;
+        document.getElementById('btn-lobby-censorship').disabled = state.funds < 4000;
+    }
+
+    function lobbyBill(billType) {
+        let costs = { healthcare: 3000, tax: 2000, censorship: 4000 };
+        let cost = costs[billType];
+
+        if (state.funds >= cost) {
+            state.funds -= cost;
+            let bought = Math.floor(Math.random() * 8) + 5; // buys 5-12 votes
+            state.bribedVotes[billType] += bought;
+            log(`Spent $${cost} to lobby opposition. Secured +${bought} backdoor votes for the ${billType} bill.`, 'text-warn');
+            updateUI();
+        } else {
+            log(`Not enough party funds to lobby for this bill!`, 'text-danger');
+        }
+    }
+
+    function voteBill(billType) {
+        let baseVotes = state.seats;
+        let boughtVotes = state.bribedVotes[billType];
+        
+        // Random alignment swing from independent politicians (-5 to +10)
+        let swingVotes = Math.floor(Math.random() * 16) - 5; 
+        let totalYesVotes = baseVotes + boughtVotes + swingVotes;
+
+        log(`Parliamentary voting started for ${billType.toUpperCase()}...`);
+        log(`Your seats: ${baseVotes} | Bribed: ${boughtVotes} | Moderates alignment: ${swingVotes >= 0 ? '+' : ''}${swingVotes}`);
+
+        if (totalYesVotes >= 51) {
+            log(`PASSED! The bill received ${totalYesVotes} YES votes.`, 'text-success');
+            applyBillEffects(billType);
+        } else {
+            log(`FAILED! The bill only received ${totalYesVotes} YES votes out of 51 required.`, 'text-danger');
+        }
+
+        // Reset bribed votes after a vote
+        state.bribedVotes[billType] = 0;
+        updateUI();
+    }
+
+    function applyBillEffects(billType) {
+        if (billType === 'healthcare') {
+            state.approval = Math.min(100, state.approval + 20);
+            state.funds = Math.max(0, state.funds - 4000);
+            log("Healthcare Act passed! Public approval soared (+20%), Treasury funds hit (-$4,000)", "text-success");
+        } else if (billType === 'tax') {
+            state.approval = Math.max(0, state.approval - 15);
+            state.funds += 8000;
+            log("Corporate Tax Cuts passed. Mega-corporations fund your party (+$8,000), Public approval dropped (-15%)", "text-success");
+        } else if (billType === 'censorship') {
+            state.approval = Math.max(0, state.approval - 25);
+            state.seats = Math.min(100, state.seats + 8); // Gerrymander advantage
+            log("Censorship bill active. Public is furious (-25% approval) but state media manipulation hands you control over +8 seats instantly.", "text-warn");
+        }
+    }
+
+    function nextTurn() {
+        state.turn++;
+        
+        // Passive party income based on approval status
+        let passiveIncome = Math.floor(state.approval * 60);
+        state.funds += passiveIncome;
+        log(`New Legislative session started. Collected $${passiveIncome} from party memberships and donations.`);
+
+        // Election checking
+        if (state.turn > state.maxTurnsInTerm) {
+            triggerElection();
+        }
+
+        updateUI();
+    }
+
+    function triggerElection() {
+        log("🚨 ELECTION YEAR! The citizens are heading to the ballots... 🚨", "text-warn");
+        
+        // Seats calculated dynamically on final approval rating
+        let newSeats = Math.floor((state.approval / 100) * 80) + Math.floor(Math.random() * 15);
+        newSeats = Math.max(10, Math.min(95, newSeats)); // Clamp between 10 and 95
+        
+        let difference = newSeats - state.seats;
+        state.seats = newSeats;
+
+        if (difference >= 0) {
+            log(`Election Results: Massive success! You gained ${difference} seats. Current total: ${state.seats}/100.`, 'text-success');
+        } else {
+            log(`Election Results: Disaster! You lost ${Math.abs(difference)} seats due to poor approval. Current total: ${state.seats}/100.`, 'text-danger');
+        }
+
+        // Reset system for next term
+        state.turn = 1;
+    }
+
+    // Initialize Game
+    updateUI();
+</script>
+
+</body>
+</html>
